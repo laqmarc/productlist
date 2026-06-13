@@ -212,6 +212,8 @@ class Productlist extends Module
                 'loadedProducts' => $this->l('Loaded products'),
                 'previousImage' => $this->l('Previous image'),
                 'nextImage' => $this->l('Next image'),
+                'productImages' => $this->l('Product images'),
+                'goToImage' => $this->l('Go to image'),
             ),
         ));
     }

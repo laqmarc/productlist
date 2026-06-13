@@ -718,6 +718,13 @@
   transform: scale(1.25);
 }
 
+.productlist-card__carousel-nav:focus-visible,
+.productlist-card__carousel-dot:focus-visible,
+.productlist-card__add-to-cart:focus-visible {
+  outline: 2px solid #2fb5d2;
+  outline-offset: 2px;
+}
+
 @media (max-width: 767px) {
   .productlist-card__carousel-nav {
     opacity: 1;
@@ -1579,5 +1586,28 @@
 
   .productlist-view-showcase .products .product:first-child .productlist-enhanced-card--showcase .productlist-card__footer {
     padding: 0 1.2rem 1.2rem;
+  }
+}
+
+/* ---- Respect reduced-motion preferences ----
+   Disables decorative transitions/animations (hover lift, image zoom, carousel
+   sliding, image fade) without touching the masonry positioning transform,
+   which lives on .product wrappers, not on the cards. */
+@media (prefers-reduced-motion: reduce) {
+  .productlist-enhanced-card,
+  .productlist-card__image img,
+  .productlist-card__image-hover,
+  .productlist-card__carousel-track,
+  .productlist-card__carousel-nav,
+  .productlist-card__carousel-dot {
+    transition: none !important;
+  }
+
+  .productlist-enhanced-card:hover {
+    transform: none !important;
+  }
+
+  .productlist-enhanced-card:hover .productlist-card__image img {
+    transform: none !important;
   }
 }

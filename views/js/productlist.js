@@ -320,6 +320,9 @@
     var startX = null;
 
     carousel.className = 'productlist-card__carousel';
+    carousel.setAttribute('role', 'group');
+    carousel.setAttribute('aria-roledescription', 'carousel');
+    carousel.setAttribute('aria-label', data.title || getLabel('productImages', 'Product images'));
     track.className = 'productlist-card__carousel-track';
     dots.className = 'productlist-card__carousel-dots';
 
@@ -331,6 +334,8 @@
       slide.className = 'productlist-card__carousel-slide';
       slide.href = data.url || '#';
       slide.setAttribute('aria-label', data.title);
+      slide.setAttribute('role', 'group');
+      slide.setAttribute('aria-roledescription', 'slide');
       image.className = 'productlist-card__carousel-image';
       image.src = img.src;
       image.alt = img.alt || data.title || '';
@@ -340,7 +345,7 @@
 
       dot.type = 'button';
       dot.className = 'productlist-card__carousel-dot';
-      dot.setAttribute('aria-label', String(i + 1));
+      dot.setAttribute('aria-label', getLabel('goToImage', 'Go to image') + ' ' + (i + 1));
       dot.addEventListener('click', function (event) {
         event.preventDefault();
         goTo(i);
@@ -353,7 +358,14 @@
       track.style.transform = 'translateX(' + (-index * 100) + '%)';
 
       Array.prototype.forEach.call(dots.children, function (dot, dotIndex) {
-        dot.classList.toggle('is-active', dotIndex === index);
+        var isActive = dotIndex === index;
+        dot.classList.toggle('is-active', isActive);
+
+        if (isActive) {
+          dot.setAttribute('aria-current', 'true');
+        } else {
+          dot.removeAttribute('aria-current');
+        }
       });
     }
 
@@ -393,6 +405,16 @@
 
       startX = null;
     }, { passive: true });
+
+    carousel.addEventListener('keydown', function (event) {
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        goTo(index - 1);
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        goTo(index + 1);
+      }
+    });
 
     carousel.appendChild(track);
     carousel.appendChild(prev);
