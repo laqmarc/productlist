@@ -959,17 +959,30 @@
     var card = document.createElement('article');
     var imageArea = document.createElement('div');
     var body = document.createElement('div');
+    var hasImage = isCardPartVisible('masonry', 'image');
 
     card.className = 'productlist-enhanced-card productlist-enhanced-card--masonry ' + getCardStateClass('masonry');
     imageArea.className = 'productlist-card__image';
     body.className = 'productlist-card__body';
 
-    if (isCardPartVisible('masonry', 'image')) {
-      imageArea.appendChild(createLinkedImage(data));
-      card.appendChild(imageArea);
-    }
+    if (hasImage) {
+      var imageLink = createLinkedImage(data);
+      var image = imageLink.querySelector('img');
 
-    appendProductFlags(body, 'masonry', data);
+      // Real image ratios drive the masonry rhythm, so load them eagerly to
+      // keep the measured column heights correct instead of collapsing to zero
+      // while the image is still lazy.
+      if (image) {
+        image.loading = 'eager';
+      }
+
+      imageArea.appendChild(imageLink);
+      // Flags sit over the image as floating badges in this view.
+      appendProductFlags(imageArea, 'masonry', data);
+      card.appendChild(imageArea);
+    } else {
+      appendProductFlags(body, 'masonry', data);
+    }
 
     if (isCardPartVisible('masonry', 'title')) {
       body.appendChild(createTitle(data));
@@ -1068,6 +1081,176 @@
       product.appendChild(builder(data));
       product.setAttribute('data-productlist-views', (builtViews + ' ' + view).trim());
     });
+  }
+
+  // ---- Real masonry layout (Pinterest-style, order-preserving) ----
+  // Each product is absolutely positioned into the currently shortest column
+  // using its real rendered height, so cards pack tightly with no row gaps
+  // while keeping the original order left-to-right, top-to-bottom.
+  var masonryGap = 16;
+  var masonryActive = false;
+  var masonryBound = false;
+  var masonryFrame = null;
+
+  function getMasonryColumnCount(containerWidth) {
+    var layout = window.productlistLayout || {};
+    var desktop = parseInt(layout.gridColumnsDesktop, 10) || 4;
+    var tablet = parseInt(layout.gridColumnsTablet, 10) || 3;
+
+    if (containerWidth < 480) {
+      return 1;
+    }
+
+    if (containerWidth < 768) {
+      return 2;
+    }
+
+    if (containerWidth < 992) {
+      return Math.max(2, tablet);
+    }
+
+    return Math.max(2, desktop);
+  }
+
+  function watchMasonryImages(container) {
+    var images = container.querySelectorAll('.productlist-enhanced-card--masonry img');
+
+    Array.prototype.forEach.call(images, function (image) {
+      if (image.getAttribute('data-productlist-masonry-watched') === '1') {
+        return;
+      }
+
+      image.setAttribute('data-productlist-masonry-watched', '1');
+
+      if (image.complete) {
+        return;
+      }
+
+      // Relayout once the image reports its real size.
+      image.addEventListener('load', scheduleMasonryLayout);
+      image.addEventListener('error', scheduleMasonryLayout);
+    });
+  }
+
+  function layoutMasonry() {
+    var container = getProductsContainer();
+    var items;
+    var styles;
+    var paddingLeft;
+    var paddingRight;
+    var innerWidth;
+    var columns;
+    var columnWidth;
+    var columnHeights = [];
+    var tallest = 0;
+    var i;
+
+    if (!container || !document.body.classList.contains('productlist-view-masonry')) {
+      return;
+    }
+
+    items = container.querySelectorAll('.product');
+    styles = window.getComputedStyle(container);
+    paddingLeft = parseFloat(styles.paddingLeft) || 0;
+    paddingRight = parseFloat(styles.paddingRight) || 0;
+    innerWidth = container.clientWidth - paddingLeft - paddingRight;
+
+    if (innerWidth <= 0) {
+      return;
+    }
+
+    columns = getMasonryColumnCount(innerWidth);
+    columnWidth = (innerWidth - masonryGap * (columns - 1)) / columns;
+
+    for (i = 0; i < columns; i++) {
+      columnHeights.push(0);
+    }
+
+    watchMasonryImages(container);
+    container.style.setProperty('position', 'relative', 'important');
+
+    // Pass 1: equalize widths so the next pass can read final heights at once.
+    Array.prototype.forEach.call(items, function (item) {
+      item.style.setProperty('position', 'absolute', 'important');
+      item.style.setProperty('top', '0', 'important');
+      item.style.setProperty('left', '0', 'important');
+      item.style.setProperty('margin', '0', 'important');
+      item.style.setProperty('width', columnWidth + 'px', 'important');
+    });
+
+    // Pass 2: drop each card into the shortest column.
+    Array.prototype.forEach.call(items, function (item) {
+      var shortest = 0;
+      var offsetX;
+      var offsetY;
+
+      for (i = 1; i < columns; i++) {
+        if (columnHeights[i] < columnHeights[shortest] - 0.5) {
+          shortest = i;
+        }
+      }
+
+      offsetX = paddingLeft + shortest * (columnWidth + masonryGap);
+      offsetY = columnHeights[shortest];
+      item.style.setProperty('transform', 'translate3d(' + offsetX + 'px, ' + offsetY + 'px, 0)', 'important');
+      columnHeights[shortest] += item.offsetHeight + masonryGap;
+    });
+
+    for (i = 0; i < columns; i++) {
+      if (columnHeights[i] > tallest) {
+        tallest = columnHeights[i];
+      }
+    }
+
+    container.style.setProperty('height', (tallest > 0 ? tallest - masonryGap : 0) + 'px', 'important');
+  }
+
+  function scheduleMasonryLayout() {
+    if (masonryFrame) {
+      return;
+    }
+
+    masonryFrame = window.requestAnimationFrame(function () {
+      masonryFrame = null;
+      layoutMasonry();
+    });
+  }
+
+  function clearMasonryLayout() {
+    var container = getProductsContainer();
+
+    if (!container) {
+      return;
+    }
+
+    container.style.removeProperty('position');
+    container.style.removeProperty('height');
+
+    Array.prototype.forEach.call(container.querySelectorAll('.product'), function (item) {
+      ['position', 'top', 'left', 'margin', 'width', 'transform'].forEach(function (prop) {
+        item.style.removeProperty(prop);
+      });
+    });
+  }
+
+  function enableMasonry() {
+    masonryActive = true;
+
+    if (!masonryBound) {
+      masonryBound = true;
+      window.addEventListener('resize', scheduleMasonryLayout, { passive: true });
+    }
+
+    scheduleMasonryLayout();
+  }
+
+  function disableMasonry() {
+    if (!masonryActive) {
+      return;
+    }
+
+    masonryActive = false;
+    clearMasonryLayout();
   }
 
   function getNextPageUrl(scope) {
@@ -1228,6 +1411,12 @@
     renderEnhancedCards(view);
     ensureTableHeader(view);
     annotateTableColumns();
+
+    if (view === 'masonry') {
+      enableMasonry();
+    } else {
+      disableMasonry();
+    }
 
     Array.prototype.forEach.call(buttons, function (button) {
       var active = button.getAttribute('data-productlist-view') === view;
