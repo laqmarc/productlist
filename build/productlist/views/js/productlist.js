@@ -113,7 +113,11 @@
       return;
     }
 
-    if (url.searchParams.get('resultsPerPage') === String(productsPerPage)) {
+    // Respect an explicit per-page value already present in the URL (the
+    // theme's "items per page" selector or a previous visit). Only apply the
+    // configured default when the visitor has not chosen a value yet, so the
+    // customer can always override it.
+    if (url.searchParams.has('resultsPerPage')) {
       return;
     }
 
@@ -990,43 +994,79 @@
     return card;
   }
 
-  function renderEnhancedCards() {
+  var cardBuilders = {
+    grid: buildGridCard,
+    list: buildListCard,
+    table: buildTableCard,
+    compact: buildCompactCard,
+    showcase: buildShowcaseCard,
+    masonry: buildMasonryCard
+  };
+
+  // Keeps the parsed product data so other views can be built lazily without
+  // re-scraping the (now hidden) original miniature.
+  var productDataCache = new WeakMap();
+
+  function ensureProductData(product) {
+    var data = productDataCache.get(product);
+
+    if (data) {
+      return data;
+    }
+
+    if (product.getAttribute('data-productlist-done') === '1') {
+      return null;
+    }
+
+    data = getProductData(product);
+
+    if (!data) {
+      return null;
+    }
+
+    productDataCache.set(product, data);
+    product.setAttribute('data-productlist-done', '1');
+    product.classList.add('productlist-enhanced-ready');
+
+    var miniature = product.querySelector('.product-miniature');
+    if (miniature) {
+      miniature.style.setProperty('display', 'none', 'important');
+    }
+
+    return data;
+  }
+
+  // Builds only the card for the requested view. Each view is built at most
+  // once per product, the first time the visitor actually opens that view, so
+  // a product never carries more than the cards it has shown (instead of all
+  // six). This keeps the DOM light and avoids duplicating the listing markup.
+  function renderEnhancedCards(view) {
     var products = getProductsContainer();
+    var builder = cardBuilders[view];
     var items;
 
-    if (!products) {
+    if (!products || !builder) {
       return;
     }
 
     items = products.querySelectorAll('.product');
 
     Array.prototype.forEach.call(items, function (product) {
-      var data;
-
-      if (product.getAttribute('data-productlist-done') === '1') {
-        return;
-      }
-
-      data = getProductData(product);
+      var data = ensureProductData(product);
+      var builtViews;
 
       if (!data) {
         return;
       }
 
-      product.setAttribute('data-productlist-done', '1');
-      product.classList.add('productlist-enhanced-ready');
+      builtViews = product.getAttribute('data-productlist-views') || '';
 
-      var miniature = product.querySelector('.product-miniature');
-      if (miniature) {
-        miniature.style.setProperty('display', 'none', 'important');
+      if (builtViews.split(' ').indexOf(view) !== -1) {
+        return;
       }
 
-      product.appendChild(buildGridCard(data));
-      product.appendChild(buildListCard(data));
-      product.appendChild(buildTableCard(data));
-      product.appendChild(buildCompactCard(data));
-      product.appendChild(buildShowcaseCard(data));
-      product.appendChild(buildMasonryCard(data));
+      product.appendChild(builder(data));
+      product.setAttribute('data-productlist-views', (builtViews + ' ' + view).trim());
     });
   }
 
@@ -1076,22 +1116,20 @@
     return status;
   }
 
-  function initInfiniteScroll(getCurrentView) {
-    var products = getProductsContainer();
-    var nextPageUrl = getNextPageUrl(document);
+  // Returns a controller with a refresh() method. The products container and
+  // the next-page URL are re-resolved on every refresh so that infinite scroll
+  // keeps working after PrestaShop replaces the listing (faceted search, sort
+  // or AJAX pagination), instead of holding on to a detached node.
+  function setupInfiniteScroll(getCurrentView) {
+    var products = null;
+    var nextPageUrl = '';
     var loading = false;
-    var status;
-
-    if (window.productlistPaginationMode !== 'infinite' || !products || !nextPageUrl) {
-      return;
-    }
-
-    status = ensureInfiniteScrollStatus(products);
-    hideNativePagination();
-    updateInfiniteStatus(status, products, '');
+    var bound = false;
+    var scrollScheduled = false;
+    var status = null;
 
     function loadNextPage() {
-      if (loading || !nextPageUrl) {
+      if (loading || !nextPageUrl || !products) {
         return;
       }
 
@@ -1108,7 +1146,11 @@
         var nextProducts = doc.querySelectorAll('#js-product-list .products .product, #products .products .product');
 
         Array.prototype.forEach.call(nextProducts, function (product) {
-          products.appendChild(document.importNode(product, true));
+          var imported = document.importNode(product, true);
+
+          // Avoid duplicating ids that already exist on the current page.
+          removeDuplicateIds(imported);
+          products.appendChild(imported);
         });
 
         nextPageUrl = getNextPageUrl(doc);
@@ -1122,14 +1164,48 @@
       });
     }
 
-    window.addEventListener('scroll', function () {
-      var rect = products.getBoundingClientRect();
-      var distanceToBottom = rect.bottom - window.innerHeight;
-
-      if (distanceToBottom < 700) {
-        loadNextPage();
+    function onScroll() {
+      if (scrollScheduled) {
+        return;
       }
-    }, { passive: true });
+
+      scrollScheduled = true;
+      window.requestAnimationFrame(function () {
+        scrollScheduled = false;
+
+        if (!products) {
+          return;
+        }
+
+        if (products.getBoundingClientRect().bottom - window.innerHeight < 700) {
+          loadNextPage();
+        }
+      });
+    }
+
+    function refresh() {
+      if (window.productlistPaginationMode !== 'infinite') {
+        return;
+      }
+
+      products = getProductsContainer();
+      nextPageUrl = getNextPageUrl(document);
+
+      if (!products || !nextPageUrl) {
+        return;
+      }
+
+      status = ensureInfiniteScrollStatus(products);
+      hideNativePagination();
+      updateInfiniteStatus(status, products, '');
+
+      if (!bound) {
+        window.addEventListener('scroll', onScroll, { passive: true });
+        bound = true;
+      }
+    }
+
+    return { refresh: refresh };
   }
 
   function getAvailableViews() {
@@ -1149,7 +1225,7 @@
 
     root.classList.add('productlist-view-' + view);
     document.body.classList.add('productlist-view-' + view);
-    renderEnhancedCards();
+    renderEnhancedCards(view);
     ensureTableHeader(view);
     annotateTableColumns();
 
@@ -1201,9 +1277,11 @@
 
     currentView = resolveInitialView(switcher);
     applyView(currentView);
-    initInfiniteScroll(function () {
+
+    var infiniteScroll = setupInfiniteScroll(function () {
       return currentView;
     });
+    infiniteScroll.refresh();
 
     document.addEventListener('click', function (event) {
       var button = event.target.closest('[data-productlist-view]');
@@ -1225,6 +1303,9 @@
           switcher = document.querySelector('[data-productlist-default]') || createSwitcher();
 
           applyView(currentView);
+          // The listing was replaced by the theme; re-resolve the container
+          // and next-page URL so infinite scroll keeps working.
+          infiniteScroll.refresh();
         }, 0);
       });
     }
