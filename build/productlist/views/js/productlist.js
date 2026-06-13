@@ -299,7 +299,118 @@
     return element;
   }
 
+  function getImageMode() {
+    var mode = window.productlistImageMode;
+
+    if (mode === 'hover' || mode === 'carousel') {
+      return mode;
+    }
+
+    return 'none';
+  }
+
+  function createImageCarousel(data) {
+    var images = data.images || [];
+    var carousel = document.createElement('div');
+    var track = document.createElement('div');
+    var dots = document.createElement('div');
+    var prev = document.createElement('button');
+    var next = document.createElement('button');
+    var index = 0;
+    var startX = null;
+
+    carousel.className = 'productlist-card__carousel';
+    track.className = 'productlist-card__carousel-track';
+    dots.className = 'productlist-card__carousel-dots';
+
+    images.forEach(function (img, i) {
+      var slide = document.createElement('a');
+      var image = document.createElement('img');
+      var dot = document.createElement('button');
+
+      slide.className = 'productlist-card__carousel-slide';
+      slide.href = data.url || '#';
+      slide.setAttribute('aria-label', data.title);
+      image.className = 'productlist-card__carousel-image';
+      image.src = img.src;
+      image.alt = img.alt || data.title || '';
+      image.loading = i === 0 ? 'eager' : 'lazy';
+      slide.appendChild(image);
+      track.appendChild(slide);
+
+      dot.type = 'button';
+      dot.className = 'productlist-card__carousel-dot';
+      dot.setAttribute('aria-label', String(i + 1));
+      dot.addEventListener('click', function (event) {
+        event.preventDefault();
+        goTo(i);
+      });
+      dots.appendChild(dot);
+    });
+
+    function goTo(target) {
+      index = (target + images.length) % images.length;
+      track.style.transform = 'translateX(' + (-index * 100) + '%)';
+
+      Array.prototype.forEach.call(dots.children, function (dot, dotIndex) {
+        dot.classList.toggle('is-active', dotIndex === index);
+      });
+    }
+
+    prev.type = 'button';
+    next.type = 'button';
+    prev.className = 'productlist-card__carousel-nav productlist-card__carousel-nav--prev';
+    next.className = 'productlist-card__carousel-nav productlist-card__carousel-nav--next';
+    prev.setAttribute('aria-label', getLabel('previousImage', 'Previous image'));
+    next.setAttribute('aria-label', getLabel('nextImage', 'Next image'));
+    prev.innerHTML = '<span aria-hidden="true">‹</span>';
+    next.innerHTML = '<span aria-hidden="true">›</span>';
+
+    prev.addEventListener('click', function (event) {
+      event.preventDefault();
+      goTo(index - 1);
+    });
+
+    next.addEventListener('click', function (event) {
+      event.preventDefault();
+      goTo(index + 1);
+    });
+
+    track.addEventListener('touchstart', function (event) {
+      startX = event.touches[0].clientX;
+    }, { passive: true });
+
+    track.addEventListener('touchend', function (event) {
+      if (startX === null) {
+        return;
+      }
+
+      var delta = event.changedTouches[0].clientX - startX;
+
+      if (Math.abs(delta) > 40) {
+        goTo(index + (delta < 0 ? 1 : -1));
+      }
+
+      startX = null;
+    }, { passive: true });
+
+    carousel.appendChild(track);
+    carousel.appendChild(prev);
+    carousel.appendChild(next);
+    carousel.appendChild(dots);
+    goTo(0);
+
+    return carousel;
+  }
+
   function createLinkedImage(data) {
+    var mode = getImageMode();
+    var images = data.images || [];
+
+    if (mode === 'carousel' && images.length > 1) {
+      return createImageCarousel(data);
+    }
+
     var link = document.createElement('a');
     var image = data.image ? data.image.cloneNode(true) : null;
 
@@ -311,6 +422,18 @@
       image.removeAttribute('width');
       image.removeAttribute('height');
       link.appendChild(image);
+    }
+
+    if (mode === 'hover' && images.length > 1) {
+      var hoverImage = document.createElement('img');
+
+      hoverImage.className = 'productlist-card__image-hover';
+      hoverImage.src = images[1].src;
+      hoverImage.alt = '';
+      hoverImage.loading = 'lazy';
+      hoverImage.setAttribute('aria-hidden', 'true');
+      link.appendChild(hoverImage);
+      link.classList.add('has-hover-image');
     }
 
     return link;
@@ -742,6 +865,7 @@
       flags: embedded.flags || [],
       id: embedded.id || '',
       image: image,
+      images: embedded.images || [],
       priceHtml: price ? price.innerHTML : '',
       quickView: quickView,
       reference: embedded.reference || '',

@@ -27,6 +27,7 @@ class Productlist extends Module
     const CONFIG_PRODUCTS_PER_PAGE = 'PRODUCTLIST_PRODUCTS_PER_PAGE';
     const CONFIG_INFINITE_SCROLL = 'PRODUCTLIST_INFINITE_SCROLL';
     const CONFIG_PAGINATION_MODE = 'PRODUCTLIST_PAGINATION_MODE';
+    const CONFIG_IMAGE_MODE = 'PRODUCTLIST_IMAGE_MODE';
 
     private $views = array('grid', 'list', 'table', 'compact', 'showcase', 'masonry');
 
@@ -34,7 +35,7 @@ class Productlist extends Module
     {
         $this->name = 'productlist';
         $this->tab = 'front_office_features';
-        $this->version = '0.11.1';
+        $this->version = '0.12.0';
         $this->author = 'Modulspresata';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -68,6 +69,7 @@ class Productlist extends Module
             && Configuration::updateValue(self::CONFIG_PRODUCTS_PER_PAGE, 0)
             && Configuration::updateValue(self::CONFIG_INFINITE_SCROLL, 0)
             && Configuration::updateValue(self::CONFIG_PAGINATION_MODE, 'pagination')
+            && Configuration::updateValue(self::CONFIG_IMAGE_MODE, 'none')
             && $this->installCardConfig();
     }
 
@@ -89,6 +91,7 @@ class Productlist extends Module
             && Configuration::deleteByName(self::CONFIG_PRODUCTS_PER_PAGE)
             && Configuration::deleteByName(self::CONFIG_INFINITE_SCROLL)
             && Configuration::deleteByName(self::CONFIG_PAGINATION_MODE)
+            && Configuration::deleteByName(self::CONFIG_IMAGE_MODE)
             && $this->uninstallCardConfig()
             && parent::uninstall();
     }
@@ -111,9 +114,14 @@ class Productlist extends Module
             $tableImageWidth = $this->clampInteger(Tools::getValue(self::CONFIG_TABLE_IMAGE_WIDTH), 60, 220, 112);
             $productsPerPage = $this->clampInteger(Tools::getValue(self::CONFIG_PRODUCTS_PER_PAGE), 0, 120, 0);
             $paginationMode = Tools::getValue(self::CONFIG_PAGINATION_MODE, 'pagination');
+            $imageMode = Tools::getValue(self::CONFIG_IMAGE_MODE, 'none');
 
             if (!in_array($paginationMode, array('pagination', 'infinite'))) {
                 $paginationMode = 'pagination';
+            }
+
+            if (!in_array($imageMode, array('none', 'hover', 'carousel'))) {
+                $imageMode = 'none';
             }
 
             if (!in_array($defaultView, $this->views)) {
@@ -139,6 +147,7 @@ class Productlist extends Module
                 Configuration::updateValue(self::CONFIG_PRODUCTS_PER_PAGE, $productsPerPage);
                 Configuration::updateValue(self::CONFIG_PAGINATION_MODE, $paginationMode);
                 Configuration::updateValue(self::CONFIG_INFINITE_SCROLL, (int) ($paginationMode === 'infinite'));
+                Configuration::updateValue(self::CONFIG_IMAGE_MODE, $imageMode);
 
                 $output .= $this->displayConfirmation($this->l('Settings updated.'));
             }
@@ -179,6 +188,7 @@ class Productlist extends Module
             'productlistProductsPerPage' => $this->clampInteger(Configuration::get(self::CONFIG_PRODUCTS_PER_PAGE), 0, 120, 0),
             'productlistPaginationMode' => $this->getPaginationMode(),
             'productlistInfiniteScroll' => $this->getPaginationMode() === 'infinite',
+            'productlistImageMode' => $this->getImageMode(),
             'productlistCardConfig' => $this->getCardConfig(),
             'productlistLabels' => array(
                 'view' => $this->l('View'),
@@ -199,6 +209,8 @@ class Productlist extends Module
                 'noMoreProducts' => $this->l('No more products'),
                 'loadMoreError' => $this->l('Could not load more products'),
                 'loadedProducts' => $this->l('Loaded products'),
+                'previousImage' => $this->l('Previous image'),
+                'nextImage' => $this->l('Next image'),
             ),
         ));
     }
@@ -373,6 +385,21 @@ class Productlist extends Module
                             'name' => 'name',
                         ),
                     ),
+                    array(
+                        'type' => 'select',
+                        'label' => $this->l('Product image behavior'),
+                        'name' => self::CONFIG_IMAGE_MODE,
+                        'desc' => $this->l('Show the second image on hover or a carousel with all product images. Needs more than one image per product.'),
+                        'options' => array(
+                            'query' => array(
+                                array('id' => 'none', 'name' => $this->l('Single image')),
+                                array('id' => 'hover', 'name' => $this->l('Second image on hover')),
+                                array('id' => 'carousel', 'name' => $this->l('Carousel of all images')),
+                            ),
+                            'id' => 'id',
+                            'name' => 'name',
+                        ),
+                    ),
                 ),
                 'submit' => array(
                     'title' => $this->l('Save'),
@@ -419,6 +446,7 @@ class Productlist extends Module
             self::CONFIG_PRODUCTS_PER_PAGE => (int) Configuration::get(self::CONFIG_PRODUCTS_PER_PAGE),
             self::CONFIG_INFINITE_SCROLL => (int) Configuration::get(self::CONFIG_INFINITE_SCROLL),
             self::CONFIG_PAGINATION_MODE => $this->getPaginationMode(),
+            self::CONFIG_IMAGE_MODE => $this->getImageMode(),
         );
     }
 
@@ -929,6 +957,8 @@ class Productlist extends Module
 
     private function buildProductPayload($product)
     {
+        $imageMode = $this->getImageMode();
+
         return array(
             'id' => (int) $this->getProductValue($product, array('id_product', 'id')),
             'name' => (string) $this->getProductValue($product, array('name')),
@@ -939,7 +969,84 @@ class Productlist extends Module
             'availability' => (string) $this->getProductValue($product, array('availability_message', 'availability', 'stock_availability')),
             'condition' => (string) $this->getProductValue($product, array('condition')),
             'flags' => $this->normalizeProductFlags($this->getProductValue($product, array('flags'))),
+            // Only resolve the full image set when a multi-image mode is active,
+            // to avoid an extra query per product when the feature is off.
+            'images' => $imageMode === 'none' ? array() : $this->buildProductImages($product),
         );
+    }
+
+    private function getImageMode()
+    {
+        $mode = Configuration::get(self::CONFIG_IMAGE_MODE);
+
+        if (in_array($mode, array('none', 'hover', 'carousel'), true)) {
+            return $mode;
+        }
+
+        return 'none';
+    }
+
+    private function buildProductImages($product)
+    {
+        $idProduct = (int) $this->getProductValue($product, array('id_product', 'id'));
+
+        if ($idProduct <= 0) {
+            return array();
+        }
+
+        $linkRewrite = (string) $this->getProductValue($product, array('link_rewrite'));
+
+        if ($linkRewrite === '') {
+            // getImageLink only uses the rewrite for the SEO filename, not the
+            // lookup, so a placeholder still resolves to the right image.
+            $linkRewrite = 'product';
+        }
+
+        $idLang = (int) $this->context->language->id;
+        $imageType = $this->resolveImageType();
+        $entries = array();
+
+        try {
+            $images = Image::getImages($idLang, $idProduct);
+        } catch (Exception $e) {
+            return array();
+        }
+
+        if (!is_array($images)) {
+            return array();
+        }
+
+        foreach ($images as $image) {
+            if (!isset($image['id_image'])) {
+                continue;
+            }
+
+            $url = $this->context->link->getImageLink($linkRewrite, (int) $image['id_image'], $imageType);
+
+            if (!$url) {
+                continue;
+            }
+
+            $entries[] = array(
+                'src' => (string) $url,
+                'alt' => isset($image['legend']) ? (string) $image['legend'] : '',
+            );
+        }
+
+        return $entries;
+    }
+
+    private function resolveImageType()
+    {
+        if (method_exists('ImageType', 'getFormattedName')) {
+            $name = ImageType::getFormattedName('home');
+
+            if (!empty($name)) {
+                return $name;
+            }
+        }
+
+        return 'home_default';
     }
 
     private function getProductValue($product, array $keys)
