@@ -990,38 +990,43 @@
     return card;
   }
 
-  function renderEnhancedCards() {
-    var products = getProductsContainer();
-    var items;
+function renderEnhancedCards() {
+  var products = getProductsContainer();
 
-    if (!products) {
+  if (!products) {
+    return;
+  }
+
+  var items = products.querySelectorAll('.product');
+
+  Array.prototype.forEach.call(items, function (product) {
+    // Idempotent: si ja té les targetes injectades, no fem res
+    if (product.classList.contains('productlist-enhanced-ready')
+        && product.querySelector('.productlist-enhanced-card')) {
       return;
     }
 
-    items = products.querySelectorAll('.product');
+    // Neteja qualsevol resta anterior (re-render AJAX, canvi de vista, etc.)
+    Array.prototype.forEach.call(
+      product.querySelectorAll('.productlist-enhanced-card'),
+      function (card) { card.parentNode.removeChild(card); }
+    );
 
-    Array.prototype.forEach.call(items, function (product) {
-      var data;
+    var data = getProductData(product);
 
-      if (product.querySelector('.productlist-enhanced-card')) {
-        return;
-      }
+    if (!data) {
+      return;
+    }
 
-      data = getProductData(product);
-
-      if (!data) {
-        return;
-      }
-
-      product.classList.add('productlist-enhanced-ready');
-      product.appendChild(buildGridCard(data));
-      product.appendChild(buildListCard(data));
-      product.appendChild(buildTableCard(data));
-      product.appendChild(buildCompactCard(data));
-      product.appendChild(buildShowcaseCard(data));
-      product.appendChild(buildMasonryCard(data));
-    });
-  }
+    product.classList.add('productlist-enhanced-ready');
+    product.appendChild(buildGridCard(data));
+    product.appendChild(buildListCard(data));
+    product.appendChild(buildTableCard(data));
+    product.appendChild(buildCompactCard(data));
+    product.appendChild(buildShowcaseCard(data));
+    product.appendChild(buildMasonryCard(data));
+  });
+}
 
   function getNextPageUrl(scope) {
     var root = scope || document;
