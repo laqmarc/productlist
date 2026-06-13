@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<module>
+  <name>productlist</name>
+  <displayName><![CDATA[Product List Views]]></displayName>
+  <version><![CDATA[0.11.1]]></version>
+  <description><![CDATA[Adds multiple product list views to category product listings.]]></description>
+  <author><![CDATA[Modulspresata]]></author>
+  <tab><![CDATA[front_office_features]]></tab>
+  <is_configurable>1</is_configurable>
+  <need_instance>0</need_instance>
+</module>
