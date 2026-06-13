@@ -928,6 +928,23 @@
   opacity: 0.65;
 }
 
+/* "View product" fallback (combinations / customizable / out of stock):
+   an outlined variant so it reads as a link to the page, not a quick add. */
+.productlist-card__add-to-cart--link {
+  box-sizing: border-box;
+  background: #fff;
+  color: #232323;
+  border: 1px solid #232323;
+  text-decoration: none;
+}
+
+.productlist-card__add-to-cart--link:hover,
+.productlist-card__add-to-cart--link:focus {
+  background: #232323;
+  color: #fff;
+  text-decoration: none;
+}
+
 .productlist-infinite-status {
   min-height: 2.5rem;
   padding: 1rem 0;

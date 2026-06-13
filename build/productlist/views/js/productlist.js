@@ -527,9 +527,35 @@
     return '';
   }
 
+  // A product can be quick-added only when it is a simple, orderable product
+  // with no combinations to pick and no customization. Anything else is sent
+  // to the product page so the customer chooses options there.
+  function productIsDirectlyAddable(data) {
+    return data.availableForOrder !== false &&
+      !data.customizable &&
+      (!data.idProductAttribute || data.idProductAttribute <= 0);
+  }
+
+  function createViewProductLink(data) {
+    var link = document.createElement('a');
+
+    link.className = 'productlist-card__add-to-cart productlist-card__add-to-cart--link';
+    link.href = data.url || '#';
+    link.textContent = getLabel('viewProduct', 'View product');
+
+    return link;
+  }
+
   function createFallbackAddToCartButton(data, quantityInput) {
-    var button = document.createElement('button');
     var cartUrl = getCartUrl();
+
+    // Combinations, customizable or unorderable products go to the page so the
+    // visitor can select what is required instead of adding a wrong variant.
+    if (!productIsDirectlyAddable(data)) {
+      return createViewProductLink(data);
+    }
+
+    var button = document.createElement('button');
 
     button.type = 'button';
     button.className = 'productlist-card__add-to-cart';
@@ -550,6 +576,7 @@
       params.set('action', 'update');
       params.set('add', '1');
       params.set('id_product', data.id);
+      params.set('id_product_attribute', data.idProductAttribute || 0);
       params.set('qty', quantity);
 
       if (getCartToken()) {
@@ -566,13 +593,17 @@
       }).then(function (response) {
         return response.json();
       }).then(function (response) {
+        if (response && response.hasError) {
+          throw new Error(response.errors ? response.errors.join(' ') : 'cart error');
+        }
+
         button.textContent = getLabel('addedToCart', 'Added');
 
         if (window.prestashop && window.prestashop.emit) {
           window.prestashop.emit('updateCart', {
             reason: {
               idProduct: data.id,
-              idProductAttribute: 0,
+              idProductAttribute: data.idProductAttribute || 0,
               linkAction: 'add-to-cart'
             },
             resp: response
@@ -659,7 +690,7 @@
     actions.className = 'productlist-card__actions';
 
     if (!data.actions && !data.quickView && !data.colors) {
-      if (isCardPartVisible(view, 'actions') && isCardPartVisible(view, 'quantity')) {
+      if (isCardPartVisible(view, 'actions') && isCardPartVisible(view, 'quantity') && productIsDirectlyAddable(data)) {
         quantityControl = createQuantityControl(actions);
         quantityInput = quantityControl.querySelector('.productlist-card__quantity-input');
         actions.appendChild(quantityControl);
@@ -679,7 +710,7 @@
       clonedActions.classList.add('productlist-card__actions-source');
     }
 
-    if (isCardPartVisible(view, 'actions') && isCardPartVisible(view, 'quantity')) {
+    if (isCardPartVisible(view, 'actions') && isCardPartVisible(view, 'quantity') && productIsDirectlyAddable(data)) {
       quantityControl = createQuantityControl(clonedActions || actions);
       quantityInput = quantityControl.querySelector('.productlist-card__quantity-input');
       actions.appendChild(quantityControl);
@@ -862,8 +893,11 @@
       brand: embedded.brand || '',
       colors: colors,
       descriptionHtml: descriptionHtml.replace(/\s+/g, ' ').trim(),
+      availableForOrder: embedded.availableForOrder !== false,
+      customizable: embedded.customizable === true,
       flags: embedded.flags || [],
       id: embedded.id || '',
+      idProductAttribute: parseInt(embedded.idProductAttribute, 10) || 0,
       image: image,
       images: embedded.images || [],
       priceHtml: price ? price.innerHTML : '',

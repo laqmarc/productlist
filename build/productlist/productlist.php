@@ -202,6 +202,7 @@ class Productlist extends Module
                 'price' => $this->l('Price'),
                 'action' => $this->l('Action'),
                 'addToCart' => $this->l('Add to cart'),
+                'viewProduct' => $this->l('View product'),
                 'addingToCart' => $this->l('Adding...'),
                 'addedToCart' => $this->l('Added'),
                 'addToCartError' => $this->l('Could not add to cart'),
@@ -972,7 +973,26 @@ class Productlist extends Module
             // Only resolve the full image set when a multi-image mode is active,
             // to avoid an extra query per product when the feature is off.
             'images' => $imageMode === 'none' ? array() : $this->buildProductImages($product),
+            // Used by the JS quick add-to-cart to stay correct: products with
+            // combinations or customization are sent to the product page so the
+            // customer can pick options instead of adding a wrong variant.
+            'idProductAttribute' => (int) $this->getProductValue($product, array('id_product_attribute')),
+            'customizable' => (bool) $this->getProductValue($product, array('customizable', 'customization_required')),
+            'availableForOrder' => $this->isAvailableForOrder($product),
         );
+    }
+
+    private function isAvailableForOrder($product)
+    {
+        $value = $this->getProductValue($product, array('available_for_order'));
+
+        // Default to true when the listing data does not expose the flag, so we
+        // never hide a buy button for a product that is actually orderable.
+        if ($value === '' || $value === null) {
+            return true;
+        }
+
+        return (bool) $value;
     }
 
     private function getImageMode()
