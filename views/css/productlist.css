@@ -1232,7 +1232,6 @@
 }
 
 .productlist-enhanced-card--masonry {
-  display: grid;
   overflow: hidden;
   border: 1px solid #e0e6ec;
   border-radius: 6px;

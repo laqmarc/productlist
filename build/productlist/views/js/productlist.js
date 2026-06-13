@@ -990,43 +990,45 @@
     return card;
   }
 
-function renderEnhancedCards() {
-  var products = getProductsContainer();
+  function renderEnhancedCards() {
+    var products = getProductsContainer();
+    var items;
 
-  if (!products) {
-    return;
+    if (!products) {
+      return;
+    }
+
+    items = products.querySelectorAll('.product');
+
+    Array.prototype.forEach.call(items, function (product) {
+      var data;
+
+      if (product.getAttribute('data-productlist-done') === '1') {
+        return;
+      }
+
+      data = getProductData(product);
+
+      if (!data) {
+        return;
+      }
+
+      product.setAttribute('data-productlist-done', '1');
+      product.classList.add('productlist-enhanced-ready');
+
+      var miniature = product.querySelector('.product-miniature');
+      if (miniature) {
+        miniature.style.setProperty('display', 'none', 'important');
+      }
+
+      product.appendChild(buildGridCard(data));
+      product.appendChild(buildListCard(data));
+      product.appendChild(buildTableCard(data));
+      product.appendChild(buildCompactCard(data));
+      product.appendChild(buildShowcaseCard(data));
+      product.appendChild(buildMasonryCard(data));
+    });
   }
-
-  var items = products.querySelectorAll('.product');
-
-  Array.prototype.forEach.call(items, function (product) {
-    // Idempotent: si ja té les targetes injectades, no fem res
-    if (product.classList.contains('productlist-enhanced-ready')
-        && product.querySelector('.productlist-enhanced-card')) {
-      return;
-    }
-
-    // Neteja qualsevol resta anterior (re-render AJAX, canvi de vista, etc.)
-    Array.prototype.forEach.call(
-      product.querySelectorAll('.productlist-enhanced-card'),
-      function (card) { card.parentNode.removeChild(card); }
-    );
-
-    var data = getProductData(product);
-
-    if (!data) {
-      return;
-    }
-
-    product.classList.add('productlist-enhanced-ready');
-    product.appendChild(buildGridCard(data));
-    product.appendChild(buildListCard(data));
-    product.appendChild(buildTableCard(data));
-    product.appendChild(buildCompactCard(data));
-    product.appendChild(buildShowcaseCard(data));
-    product.appendChild(buildMasonryCard(data));
-  });
-}
 
   function getNextPageUrl(scope) {
     var root = scope || document;
@@ -1179,7 +1181,14 @@ function renderEnhancedCards() {
     return availableViews[0] || 'grid';
   }
 
+  var _initialized = false;
+
   function init() {
+    if (_initialized) {
+      return;
+    }
+    _initialized = true;
+
     var switcher = document.querySelector('[data-productlist-default]') || createSwitcher();
     var currentView;
 

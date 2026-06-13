@@ -1003,7 +1003,7 @@
     Array.prototype.forEach.call(items, function (product) {
       var data;
 
-      if (product.querySelector('.productlist-enhanced-card')) {
+      if (product.getAttribute('data-productlist-done') === '1') {
         return;
       }
 
@@ -1013,7 +1013,14 @@
         return;
       }
 
+      product.setAttribute('data-productlist-done', '1');
       product.classList.add('productlist-enhanced-ready');
+
+      var miniature = product.querySelector('.product-miniature');
+      if (miniature) {
+        miniature.style.setProperty('display', 'none', 'important');
+      }
+
       product.appendChild(buildGridCard(data));
       product.appendChild(buildListCard(data));
       product.appendChild(buildTableCard(data));
@@ -1174,7 +1181,14 @@
     return availableViews[0] || 'grid';
   }
 
+  var _initialized = false;
+
   function init() {
+    if (_initialized) {
+      return;
+    }
+    _initialized = true;
+
     var switcher = document.querySelector('[data-productlist-default]') || createSwitcher();
     var currentView;
 

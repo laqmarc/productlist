@@ -568,20 +568,12 @@
   display: none;
 }
 
-/* Amaga la .product-miniature original — tolerant a un nivell d'embolcall del tema */
-.productlist-view-grid .products .productlist-enhanced-ready .product-miniature,
-.productlist-view-list .products .productlist-enhanced-ready .product-miniature,
-.productlist-view-table .products .productlist-enhanced-ready .product-miniature,
-.productlist-view-compact .products .productlist-enhanced-ready .product-miniature,
-.productlist-view-showcase .products .productlist-enhanced-ready .product-miniature,
-.productlist-view-masonry .products .productlist-enhanced-ready .product-miniature,
-/* També amaga embolcalls típics del tema classic i derivats */
-.productlist-view-grid .products .productlist-enhanced-ready .thumbnail-container,
-.productlist-view-list .products .productlist-enhanced-ready .thumbnail-container,
-.productlist-view-table .products .productlist-enhanced-ready .thumbnail-container,
-.productlist-view-compact .products .productlist-enhanced-ready .thumbnail-container,
-.productlist-view-showcase .products .productlist-enhanced-ready .thumbnail-container,
-.productlist-view-masonry .products .productlist-enhanced-ready .thumbnail-container {
+.productlist-view-grid .products .productlist-enhanced-ready > .product-miniature,
+.productlist-view-list .products .productlist-enhanced-ready > .product-miniature,
+.productlist-view-table .products .productlist-enhanced-ready > .product-miniature,
+.productlist-view-compact .products .productlist-enhanced-ready > .product-miniature,
+.productlist-view-showcase .products .productlist-enhanced-ready > .product-miniature,
+.productlist-view-masonry .products .productlist-enhanced-ready > .product-miniature {
   display: none !important;
 }
 
@@ -1240,7 +1232,6 @@
 }
 
 .productlist-enhanced-card--masonry {
-  display: grid;
   overflow: hidden;
   border: 1px solid #e0e6ec;
   border-radius: 6px;
