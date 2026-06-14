@@ -2,6 +2,13 @@
 
 All notable changes to this module are documented here.
 
+## 0.12.3
+
+### Changed
+- Grid column settings now accept `1` column on desktop and tablet, allowing a
+  single product per row across desktop, tablet and mobile.
+- Masonry also honors a configured `1` column on wider screens.
+
 ## 0.12.2
 
 ### Fixed

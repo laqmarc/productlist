@@ -2,7 +2,7 @@
 <module>
   <name>productlist</name>
   <displayName><![CDATA[Product List Views]]></displayName>
-  <version><![CDATA[0.12.2]]></version>
+  <version><![CDATA[0.12.3]]></version>
   <description><![CDATA[Adds multiple product list views to category product listings.]]></description>
   <author><![CDATA[Modulspresata]]></author>
   <tab><![CDATA[front_office_features]]></tab>

@@ -1444,10 +1444,10 @@
     }
 
     if (containerWidth < 992) {
-      return Math.max(2, tablet);
+      return Math.max(1, tablet);
     }
 
-    return Math.max(2, desktop);
+    return Math.max(1, desktop);
   }
 
   function watchMasonryImages(container) {

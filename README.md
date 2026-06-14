@@ -53,6 +53,7 @@ Primera implementacio funcional:
 - Injectar automaticament el selector si el tema no renderitza el hook.
 - Columnes de graella en escriptori.
 - Columnes de graella en tablet.
+- Es pot posar `1` columna per mostrar un sol article per fila en desktop, tablet i mobil.
 - Amplada d'imatge en vista llista.
 - Amplada d'imatge en vista taula.
 - Productes per pagina (`resultsPerPage`) i mode de paginacio (normal o scroll infinit).
@@ -98,6 +99,7 @@ Es pot forcar una vista concreta afegint `pl_view` a l'URL:
 - `upgrade/install-0.12.0.php`: inicialitza el comportament d'imatge de producte (`PRODUCTLIST_IMAGE_MODE`).
 - `upgrade/install-0.12.1.php`: correccio de persistencia de vista en paginacio i filtres.
 - `upgrade/install-0.12.2.php`: correccio de duplicats en scroll infinit.
+- `upgrade/install-0.12.3.php`: permet una sola columna de productes en desktop i tablet.
 - `views/css/productlist-admin.css` i `views/js/productlist-admin.js`: assets del backoffice (sense JS/CSS inline, per complir el validador).
 - `.github/workflows/ci.yml`: comprovacions de sintaxi PHP/JS i integritat del `.zip`.
 - `CHANGELOG.md`: historial de canvis.

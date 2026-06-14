@@ -35,7 +35,7 @@ class Productlist extends Module
     {
         $this->name = 'productlist';
         $this->tab = 'front_office_features';
-        $this->version = '0.12.2';
+        $this->version = '0.12.3';
         $this->author = 'Modulspresata';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -113,8 +113,8 @@ class Productlist extends Module
             $enableCompact = (int) Tools::getValue(self::CONFIG_ENABLE_COMPACT);
             $enableShowcase = (int) Tools::getValue(self::CONFIG_ENABLE_SHOWCASE);
             $enableMasonry = (int) Tools::getValue(self::CONFIG_ENABLE_MASONRY);
-            $gridColumnsDesktop = $this->clampInteger(Tools::getValue(self::CONFIG_GRID_COLUMNS_DESKTOP), 2, 6, 4);
-            $gridColumnsTablet = $this->clampInteger(Tools::getValue(self::CONFIG_GRID_COLUMNS_TABLET), 2, 4, 3);
+            $gridColumnsDesktop = $this->clampInteger(Tools::getValue(self::CONFIG_GRID_COLUMNS_DESKTOP), 1, 6, 4);
+            $gridColumnsTablet = $this->clampInteger(Tools::getValue(self::CONFIG_GRID_COLUMNS_TABLET), 1, 4, 3);
             $listImageWidth = $this->clampInteger(Tools::getValue(self::CONFIG_LIST_IMAGE_WIDTH), 80, 320, 160);
             $tableImageWidth = $this->clampInteger(Tools::getValue(self::CONFIG_TABLE_IMAGE_WIDTH), 60, 220, 112);
             $productsPerPage = $this->clampInteger(Tools::getValue(self::CONFIG_PRODUCTS_PER_PAGE), 0, 120, 0);
@@ -346,14 +346,14 @@ class Productlist extends Module
                         'type' => 'text',
                         'label' => $this->l('Grid columns on desktop'),
                         'name' => self::CONFIG_GRID_COLUMNS_DESKTOP,
-                        'desc' => $this->l('Allowed range: 2 to 6.'),
+                        'desc' => $this->l('Allowed range: 1 to 6.'),
                         'class' => 'fixed-width-sm',
                     ),
                     array(
                         'type' => 'text',
                         'label' => $this->l('Grid columns on tablet'),
                         'name' => self::CONFIG_GRID_COLUMNS_TABLET,
-                        'desc' => $this->l('Allowed range: 2 to 4.'),
+                        'desc' => $this->l('Allowed range: 1 to 4.'),
                         'class' => 'fixed-width-sm',
                     ),
                     array(
@@ -596,8 +596,8 @@ class Productlist extends Module
     private function getLayoutConfig()
     {
         return array(
-            'gridColumnsDesktop' => $this->clampInteger(Configuration::get(self::CONFIG_GRID_COLUMNS_DESKTOP), 2, 6, 4),
-            'gridColumnsTablet' => $this->clampInteger(Configuration::get(self::CONFIG_GRID_COLUMNS_TABLET), 2, 4, 3),
+            'gridColumnsDesktop' => $this->clampInteger(Configuration::get(self::CONFIG_GRID_COLUMNS_DESKTOP), 1, 6, 4),
+            'gridColumnsTablet' => $this->clampInteger(Configuration::get(self::CONFIG_GRID_COLUMNS_TABLET), 1, 4, 3),
             'listImageWidth' => $this->clampInteger(Configuration::get(self::CONFIG_LIST_IMAGE_WIDTH), 80, 320, 160),
             'tableImageWidth' => $this->clampInteger(Configuration::get(self::CONFIG_TABLE_IMAGE_WIDTH), 60, 220, 112),
         );
