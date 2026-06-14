@@ -22,6 +22,7 @@ class Productlist extends Module
     const CONFIG_AUTO_INJECT = 'PRODUCTLIST_AUTO_INJECT';
     const CONFIG_GRID_COLUMNS_DESKTOP = 'PRODUCTLIST_GRID_COLUMNS_DESKTOP';
     const CONFIG_GRID_COLUMNS_TABLET = 'PRODUCTLIST_GRID_COLUMNS_TABLET';
+    const CONFIG_GRID_COLUMNS_MOBILE = 'PRODUCTLIST_GRID_COLUMNS_MOBILE';
     const CONFIG_LIST_IMAGE_WIDTH = 'PRODUCTLIST_LIST_IMAGE_WIDTH';
     const CONFIG_TABLE_IMAGE_WIDTH = 'PRODUCTLIST_TABLE_IMAGE_WIDTH';
     const CONFIG_PRODUCTS_PER_PAGE = 'PRODUCTLIST_PRODUCTS_PER_PAGE';
@@ -35,7 +36,7 @@ class Productlist extends Module
     {
         $this->name = 'productlist';
         $this->tab = 'front_office_features';
-        $this->version = '0.12.3';
+        $this->version = '0.12.4';
         $this->author = 'Modulspresata';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -64,6 +65,7 @@ class Productlist extends Module
             && Configuration::updateValue(self::CONFIG_AUTO_INJECT, 1)
             && Configuration::updateValue(self::CONFIG_GRID_COLUMNS_DESKTOP, 4)
             && Configuration::updateValue(self::CONFIG_GRID_COLUMNS_TABLET, 3)
+            && Configuration::updateValue(self::CONFIG_GRID_COLUMNS_MOBILE, 1)
             && Configuration::updateValue(self::CONFIG_LIST_IMAGE_WIDTH, 160)
             && Configuration::updateValue(self::CONFIG_TABLE_IMAGE_WIDTH, 112)
             && Configuration::updateValue(self::CONFIG_PRODUCTS_PER_PAGE, 0)
@@ -86,6 +88,7 @@ class Productlist extends Module
             && Configuration::deleteByName(self::CONFIG_AUTO_INJECT)
             && Configuration::deleteByName(self::CONFIG_GRID_COLUMNS_DESKTOP)
             && Configuration::deleteByName(self::CONFIG_GRID_COLUMNS_TABLET)
+            && Configuration::deleteByName(self::CONFIG_GRID_COLUMNS_MOBILE)
             && Configuration::deleteByName(self::CONFIG_LIST_IMAGE_WIDTH)
             && Configuration::deleteByName(self::CONFIG_TABLE_IMAGE_WIDTH)
             && Configuration::deleteByName(self::CONFIG_PRODUCTS_PER_PAGE)
@@ -115,6 +118,7 @@ class Productlist extends Module
             $enableMasonry = (int) Tools::getValue(self::CONFIG_ENABLE_MASONRY);
             $gridColumnsDesktop = $this->clampInteger(Tools::getValue(self::CONFIG_GRID_COLUMNS_DESKTOP), 1, 6, 4);
             $gridColumnsTablet = $this->clampInteger(Tools::getValue(self::CONFIG_GRID_COLUMNS_TABLET), 1, 4, 3);
+            $gridColumnsMobile = $this->clampInteger(Tools::getValue(self::CONFIG_GRID_COLUMNS_MOBILE), 1, 3, 1);
             $listImageWidth = $this->clampInteger(Tools::getValue(self::CONFIG_LIST_IMAGE_WIDTH), 80, 320, 160);
             $tableImageWidth = $this->clampInteger(Tools::getValue(self::CONFIG_TABLE_IMAGE_WIDTH), 60, 220, 112);
             $productsPerPage = $this->clampInteger(Tools::getValue(self::CONFIG_PRODUCTS_PER_PAGE), 0, 120, 0);
@@ -147,6 +151,7 @@ class Productlist extends Module
                 Configuration::updateValue(self::CONFIG_AUTO_INJECT, (int) Tools::getValue(self::CONFIG_AUTO_INJECT));
                 Configuration::updateValue(self::CONFIG_GRID_COLUMNS_DESKTOP, $gridColumnsDesktop);
                 Configuration::updateValue(self::CONFIG_GRID_COLUMNS_TABLET, $gridColumnsTablet);
+                Configuration::updateValue(self::CONFIG_GRID_COLUMNS_MOBILE, $gridColumnsMobile);
                 Configuration::updateValue(self::CONFIG_LIST_IMAGE_WIDTH, $listImageWidth);
                 Configuration::updateValue(self::CONFIG_TABLE_IMAGE_WIDTH, $tableImageWidth);
                 Configuration::updateValue(self::CONFIG_PRODUCTS_PER_PAGE, $productsPerPage);
@@ -358,6 +363,13 @@ class Productlist extends Module
                     ),
                     array(
                         'type' => 'text',
+                        'label' => $this->l('Grid columns on mobile'),
+                        'name' => self::CONFIG_GRID_COLUMNS_MOBILE,
+                        'desc' => $this->l('Allowed range: 1 to 3.'),
+                        'class' => 'fixed-width-sm',
+                    ),
+                    array(
+                        'type' => 'text',
                         'label' => $this->l('List image width'),
                         'name' => self::CONFIG_LIST_IMAGE_WIDTH,
                         'suffix' => 'px',
@@ -449,6 +461,7 @@ class Productlist extends Module
             self::CONFIG_AUTO_INJECT => (int) Configuration::get(self::CONFIG_AUTO_INJECT),
             self::CONFIG_GRID_COLUMNS_DESKTOP => (int) Configuration::get(self::CONFIG_GRID_COLUMNS_DESKTOP),
             self::CONFIG_GRID_COLUMNS_TABLET => (int) Configuration::get(self::CONFIG_GRID_COLUMNS_TABLET),
+            self::CONFIG_GRID_COLUMNS_MOBILE => (int) Configuration::get(self::CONFIG_GRID_COLUMNS_MOBILE),
             self::CONFIG_LIST_IMAGE_WIDTH => (int) Configuration::get(self::CONFIG_LIST_IMAGE_WIDTH),
             self::CONFIG_TABLE_IMAGE_WIDTH => (int) Configuration::get(self::CONFIG_TABLE_IMAGE_WIDTH),
             self::CONFIG_PRODUCTS_PER_PAGE => (int) Configuration::get(self::CONFIG_PRODUCTS_PER_PAGE),
@@ -598,6 +611,7 @@ class Productlist extends Module
         return array(
             'gridColumnsDesktop' => $this->clampInteger(Configuration::get(self::CONFIG_GRID_COLUMNS_DESKTOP), 1, 6, 4),
             'gridColumnsTablet' => $this->clampInteger(Configuration::get(self::CONFIG_GRID_COLUMNS_TABLET), 1, 4, 3),
+            'gridColumnsMobile' => $this->clampInteger(Configuration::get(self::CONFIG_GRID_COLUMNS_MOBILE), 1, 3, 1),
             'listImageWidth' => $this->clampInteger(Configuration::get(self::CONFIG_LIST_IMAGE_WIDTH), 80, 320, 160),
             'tableImageWidth' => $this->clampInteger(Configuration::get(self::CONFIG_TABLE_IMAGE_WIDTH), 60, 220, 112),
         );

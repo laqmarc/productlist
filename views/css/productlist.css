@@ -477,7 +477,7 @@
   }
 
   .productlist-view-grid .products {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(var(--productlist-grid-columns-mobile, 1), minmax(0, 1fr));
   }
 
   .productlist-view-showcase .products {
@@ -485,7 +485,7 @@
   }
 
   .productlist-view-masonry .products {
-    column-count: 1;
+    column-count: var(--productlist-grid-columns-mobile, 1);
   }
 
   .productlist-view-grid .products .product {

@@ -60,6 +60,10 @@
       root.style.setProperty('--productlist-grid-columns-tablet', layout.gridColumnsTablet);
     }
 
+    if (layout.gridColumnsMobile) {
+      root.style.setProperty('--productlist-grid-columns-mobile', layout.gridColumnsMobile);
+    }
+
     if (layout.listImageWidth) {
       root.style.setProperty('--productlist-list-image-width', layout.listImageWidth + 'px');
     }
@@ -1434,13 +1438,10 @@
     var layout = window.productlistLayout || {};
     var desktop = parseInt(layout.gridColumnsDesktop, 10) || 4;
     var tablet = parseInt(layout.gridColumnsTablet, 10) || 3;
-
-    if (containerWidth < 480) {
-      return 1;
-    }
+    var mobile = parseInt(layout.gridColumnsMobile, 10) || 1;
 
     if (containerWidth < 768) {
-      return 2;
+      return Math.max(1, mobile);
     }
 
     if (containerWidth < 992) {

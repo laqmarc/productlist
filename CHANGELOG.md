@@ -2,6 +2,12 @@
 
 All notable changes to this module are documented here.
 
+## 0.12.4
+
+### Added
+- New mobile grid column setting, allowing the product grid and masonry view to
+  use 1, 2 or 3 columns on mobile.
+
 ## 0.12.3
 
 ### Changed
