@@ -21,9 +21,12 @@ Primera implementacio funcional:
 - Taula compacta amb capçalera, files alineades i versió mòbil amb etiquetes.
 - Vista compacta per compra rapida amb files denses, preu i accions visibles.
 - Vista showcase amb primer producte destacat i composicio mes editorial.
-- Vista masonry amb columnes irregulars i cards d'alçada variable.
+- Vista masonry real (estil Pinterest): cada card es col.loca a la columna mes curta segons la seva alçada real, mantenint l'ordre; es recalcula en redimensionar, en carregar imatges i amb scroll infinit. Fallback CSS `columns` si el JS no s'executa.
+- Opcions de mes fotos: segona imatge al passar el cursor, o carrusel de totes les imatges (fletxes, punts, swipe, teclat).
+- Carrusel accessible (teclat i lector de pantalla) i suport de `prefers-reduced-motion`.
 - Configuracio al backoffice.
 - Preferencia del client guardada al navegador.
+- La vista seleccionada es conserva en paginacio, ordenacio i filtres amb `pl_view`.
 - Fallback JavaScript si el tema no mostra el hook `displayProductListTop`.
 - Reaplicacio de la vista despres de filtres i paginacio Ajax.
 - Capcalera visual per a la vista de taula.
@@ -52,6 +55,8 @@ Primera implementacio funcional:
 - Columnes de graella en tablet.
 - Amplada d'imatge en vista llista.
 - Amplada d'imatge en vista taula.
+- Productes per pagina (`resultsPerPage`) i mode de paginacio (normal o scroll infinit).
+- Comportament d'imatge de producte: imatge unica, segona imatge al passar el cursor, o carrusel de totes les imatges.
 
 ## Parametre d'URL per proves
 
@@ -90,6 +95,12 @@ Es pot forcar una vista concreta afegint `pl_view` a l'URL:
 - `upgrade/install-0.9.1.php`: selector de mode paginacio/scroll infinit i comptador de productes carregats.
 - `upgrade/install-0.10.0.php`: activa les vistes compacta i showcase en botigues ja instal.lades.
 - `upgrade/install-0.11.0.php`: activa la vista masonry en botigues ja instal.lades.
+- `upgrade/install-0.12.0.php`: inicialitza el comportament d'imatge de producte (`PRODUCTLIST_IMAGE_MODE`).
+- `upgrade/install-0.12.1.php`: correccio de persistencia de vista en paginacio i filtres.
+- `upgrade/install-0.12.2.php`: correccio de duplicats en scroll infinit.
+- `views/css/productlist-admin.css` i `views/js/productlist-admin.js`: assets del backoffice (sense JS/CSS inline, per complir el validador).
+- `.github/workflows/ci.yml`: comprovacions de sintaxi PHP/JS i integritat del `.zip`.
+- `CHANGELOG.md`: historial de canvis.
 
 ## Generar paquet
 

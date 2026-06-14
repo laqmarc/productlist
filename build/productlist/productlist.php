@@ -35,7 +35,7 @@ class Productlist extends Module
     {
         $this->name = 'productlist';
         $this->tab = 'front_office_features';
-        $this->version = '0.12.0';
+        $this->version = '0.12.2';
         $this->author = 'Modulspresata';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -99,6 +99,11 @@ class Productlist extends Module
     public function getContent()
     {
         $output = '';
+
+        // Admin styles/scripts as external assets (no inline JS/CSS) so the
+        // configuration screen passes the PrestaShop validator.
+        $this->context->controller->addCSS($this->_path . 'views/css/productlist-admin.css');
+        $this->context->controller->addJS($this->_path . 'views/js/productlist-admin.js');
 
         if (Tools::isSubmit('submitProductlistConfig')) {
             $defaultView = Tools::getValue(self::CONFIG_DEFAULT_VIEW, 'grid');
@@ -473,7 +478,6 @@ class Productlist extends Module
         $fields = $this->getCardFieldLabels();
         $html = '<div class="panel">';
 
-        $html .= $this->renderCardConfigStyles();
         $html .= '<div class="panel-heading"><i class="icon-columns"></i> ' . $this->escapeHtml($this->l('Card content by view')) . '</div>';
         $html .= '<form method="post" action="' . $this->escapeHtml($action) . '" class="productlist-card-config">';
         $html .= '<div class="productlist-admin-tabs" role="tablist" aria-label="' . $this->escapeHtml($this->l('Card views')) . '">';
@@ -529,7 +533,6 @@ class Productlist extends Module
         $html .= '</button>';
         $html .= '</div>';
         $html .= '</form>';
-        $html .= $this->renderCardConfigScript();
         $html .= '</div>';
 
         return $html;
@@ -717,240 +720,6 @@ class Productlist extends Module
         );
 
         return isset($help[$field]) ? $help[$field] : '';
-    }
-
-    private function renderCardConfigStyles()
-    {
-        return '<style>
-            .productlist-card-config { margin: -15px; }
-            .productlist-admin-tabs {
-                display: flex;
-                gap: 8px;
-                padding: 18px 18px 0;
-                border-bottom: 1px solid #d8dde3;
-                background: linear-gradient(180deg, #f8fafc 0%, #eef3f7 100%);
-            }
-            .productlist-admin-tab {
-                display: inline-flex;
-                align-items: center;
-                gap: 8px;
-                min-height: 44px;
-                padding: 0 18px;
-                border: 1px solid #d8dde3;
-                border-bottom: 0;
-                border-radius: 8px 8px 0 0;
-                background: #e8edf3;
-                color: #4b5563;
-                font-weight: 700;
-                cursor: pointer;
-                transition: background 160ms ease, color 160ms ease, transform 160ms ease;
-            }
-            .productlist-admin-tab:hover {
-                background: #f7f9fb;
-                color: #111827;
-            }
-            .productlist-admin-tab.is-active {
-                position: relative;
-                bottom: -1px;
-                background: #fff;
-                color: #111827;
-                box-shadow: 0 -1px 0 #fff, 0 -4px 10px rgba(31, 41, 55, .06);
-            }
-            .productlist-admin-tab__icon {
-                display: inline-block;
-                width: 14px;
-                height: 14px;
-                color: currentColor;
-            }
-            .productlist-admin-tab__icon--grid {
-                background:
-                    linear-gradient(currentColor 0 0) 0 0 / 6px 6px,
-                    linear-gradient(currentColor 0 0) 100% 0 / 6px 6px,
-                    linear-gradient(currentColor 0 0) 0 100% / 6px 6px,
-                    linear-gradient(currentColor 0 0) 100% 100% / 6px 6px;
-                background-repeat: no-repeat;
-            }
-	            .productlist-admin-tab__icon--list,
-	            .productlist-admin-tab__icon--table,
-	            .productlist-admin-tab__icon--compact {
-	                background:
-	                    linear-gradient(currentColor 0 0) 0 2px / 14px 2px,
-	                    linear-gradient(currentColor 0 0) 0 6px / 14px 2px,
-	                    linear-gradient(currentColor 0 0) 0 10px / 14px 2px;
-	                background-repeat: no-repeat;
-	            }
-	            .productlist-admin-tab__icon--showcase {
-	                border: 2px solid currentColor;
-	                border-radius: 2px;
-	            }
-	            .productlist-admin-tab__icon--masonry {
-	                background:
-	                    linear-gradient(currentColor 0 0) 0 0 / 5px 12px,
-	                    linear-gradient(currentColor 0 0) 7px 0 / 5px 7px,
-	                    linear-gradient(currentColor 0 0) 7px 9px / 5px 5px;
-	                background-repeat: no-repeat;
-	            }
-            .productlist-admin-tabpanels { padding: 20px 18px 10px; background: #fff; }
-            .productlist-admin-tabpanel { display: none; }
-            .productlist-admin-tabpanel.is-active { display: block; }
-            .productlist-admin-panel-head {
-                display: flex;
-                align-items: baseline;
-                justify-content: space-between;
-                gap: 16px;
-                margin-bottom: 14px;
-            }
-            .productlist-admin-panel-head h3 {
-                margin: 0;
-                font-size: 16px;
-                font-weight: 700;
-            }
-            .productlist-admin-panel-head p {
-                margin: 0;
-                color: #6b7280;
-            }
-            .productlist-admin-toggle-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-                gap: 14px;
-            }
-            .productlist-admin-toggle {
-                display: flex;
-                align-items: center;
-                gap: 14px;
-                min-height: 76px;
-                margin: 0;
-                padding: 14px;
-                border: 1px solid #dbe3ea;
-                border-radius: 8px;
-                background: #f9fafb;
-                cursor: pointer;
-                box-shadow: 0 1px 2px rgba(31, 41, 55, .04);
-                transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease, transform 160ms ease;
-            }
-            .productlist-admin-toggle:hover {
-                border-color: #b8c2cc;
-                background: #fff;
-                box-shadow: 0 6px 16px rgba(31, 41, 55, .07);
-                transform: translateY(-1px);
-            }
-            .productlist-admin-toggle input[type="checkbox"] {
-                position: absolute;
-                opacity: 0;
-                pointer-events: none;
-            }
-            .productlist-admin-toggle__switch {
-                position: relative;
-                flex: 0 0 86px;
-                width: 86px;
-                height: 34px;
-                border-radius: 999px;
-                background: #dc2626;
-                box-shadow: inset 0 0 0 1px rgba(0,0,0,.08);
-                transition: background 160ms ease, box-shadow 160ms ease;
-            }
-            .productlist-admin-toggle__switch:after {
-                position: absolute;
-                top: 4px;
-                left: 4px;
-                width: 39px;
-                height: 26px;
-                border-radius: 999px;
-                background: #fff;
-                box-shadow: 0 2px 6px rgba(0,0,0,.24);
-                content: "";
-                transition: transform 160ms ease, box-shadow 160ms ease;
-                z-index: 2;
-            }
-            .productlist-admin-toggle__state {
-                position: absolute;
-                top: 0;
-                bottom: 0;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: #fff;
-                width: 39px;
-                font-size: 11px;
-                font-weight: 800;
-                letter-spacing: .02em;
-                line-height: 1;
-                z-index: 3;
-                pointer-events: none;
-            }
-            .productlist-admin-toggle__state--off {
-                right: 4px;
-                color: #dc2626;
-            }
-            .productlist-admin-toggle__state--on {
-                left: 4px;
-                color: rgba(255,255,255,.72);
-            }
-            .productlist-admin-toggle.is-enabled {
-                border-color: #9bd8e5;
-                background: #f0fbfd;
-            }
-            .productlist-admin-toggle.is-enabled .productlist-admin-toggle__switch {
-                background: #16a34a;
-                box-shadow: inset 0 0 0 1px rgba(0,0,0,.06), 0 0 0 3px rgba(22, 163, 74, .12);
-            }
-            .productlist-admin-toggle.is-enabled .productlist-admin-toggle__switch:after {
-                transform: translateX(39px);
-            }
-            .productlist-admin-toggle.is-enabled .productlist-admin-toggle__state--off {
-                color: rgba(255,255,255,.72);
-            }
-            .productlist-admin-toggle.is-enabled .productlist-admin-toggle__state--on {
-                color: #16a34a;
-            }
-            .productlist-admin-toggle__body { display: grid; gap: 2px; min-width: 0; }
-            .productlist-admin-toggle__title { color: #1f2937; font-weight: 700; }
-            .productlist-admin-toggle__hint { color: #6b7280; font-size: 12px; line-height: 1.35; }
-            @media (max-width: 767px) {
-                .productlist-admin-tabs { flex-wrap: wrap; }
-                .productlist-admin-tab { flex: 1 1 auto; justify-content: center; }
-                .productlist-admin-panel-head { display: block; }
-                .productlist-admin-panel-head p { margin-top: 6px; }
-            }
-        </style>';
-    }
-
-    private function renderCardConfigScript()
-    {
-        return '<script>
-            (function () {
-                var root = document.currentScript ? document.currentScript.closest(".panel") : document;
-                var tabs = root.querySelectorAll("[data-productlist-admin-tab]");
-                var panels = root.querySelectorAll("[data-productlist-admin-panel]");
-                var toggles = root.querySelectorAll(".productlist-admin-toggle input[type=\"checkbox\"]");
-
-                Array.prototype.forEach.call(tabs, function (tab) {
-                    tab.addEventListener("click", function () {
-                        var view = tab.getAttribute("data-productlist-admin-tab");
-
-                        Array.prototype.forEach.call(tabs, function (item) {
-                            var active = item === tab;
-                            item.classList.toggle("is-active", active);
-                            item.setAttribute("aria-selected", active ? "true" : "false");
-                        });
-
-                        Array.prototype.forEach.call(panels, function (panel) {
-                            panel.classList.toggle("is-active", panel.getAttribute("data-productlist-admin-panel") === view);
-                        });
-                    });
-                });
-
-                Array.prototype.forEach.call(toggles, function (toggle) {
-                    toggle.addEventListener("change", function () {
-                        var label = toggle.closest(".productlist-admin-toggle");
-
-                        if (label) {
-                            label.classList.toggle("is-enabled", toggle.checked);
-                        }
-                    });
-                });
-            }());
-        </script>';
     }
 
     private function escapeHtml($value)

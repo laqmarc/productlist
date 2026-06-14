@@ -24,8 +24,11 @@ New-Item -ItemType Directory -Force -Path $packageRoot | Out-Null
 $exclude = @(
     "build",
     ".git",
+    ".github",
     ".agents",
-    ".codex"
+    ".codex",
+    ".editorconfig",
+    ".gitignore"
 )
 
 Get-ChildItem -LiteralPath $moduleRoot -Force | Where-Object {
